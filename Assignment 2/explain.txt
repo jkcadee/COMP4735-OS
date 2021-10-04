@@ -1,0 +1,5 @@
+fwrite works on streams (buffered) and write runs a system call for each buffer.
+System calls are very costly compared to fwrite which consolidates all the calls into a singular write command once
+the buffer is filled out or the system is closed.
+
+fwrite will be faster in small byte amounts, while for large byte amounts, write will be faster.
