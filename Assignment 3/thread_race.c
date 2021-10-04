@@ -3,6 +3,7 @@
 #include <string.h>
 #include <pthread.h>
 
+// struct to capture arguments 
 struct ThreadFuncArgs {
     int numOfLoops;
     char* threadName;
@@ -11,6 +12,7 @@ struct ThreadFuncArgs {
 int globalVal = 0;
 pthread_mutex_t lock;
 
+// function that is run when mutex is not an argument
 void* threadLooping(void* vargp) {
     struct ThreadFuncArgs *args = (struct ThreadFuncArgs *)vargp;
 
@@ -22,6 +24,7 @@ void* threadLooping(void* vargp) {
     return NULL;
 }
 
+// function that is run when mutex is an argument
 void* mutexThreadLooping(void* vargp) {
     pthread_mutex_lock(&lock);
 
@@ -40,6 +43,7 @@ void* mutexThreadLooping(void* vargp) {
 int main(int argc, char *argv[]) {
     int threadAmount = 0;
 
+    // if mutex is an argument, change the index at which arguments are counted by
     if (strcmp(argv[1], "-mutex") == 0) {
         for (int i = 0; i < argc; i++)
         {
@@ -69,6 +73,8 @@ int main(int argc, char *argv[]) {
 
     struct ThreadFuncArgs args[threadAmount];
 
+    // if mutex is an argument, change the index to count by
+    // and use the mutex function instead
     if (strcmp(argv[1], "-mutex") == 0) {
         for (int i = 0; i < threadAmount; i++)
         {
@@ -94,6 +100,7 @@ int main(int argc, char *argv[]) {
         }
     }
 
+    // join all the threads back and destroy the mutex lock
     for (int i = 0; i < threadAmount; i++)
     {
         pthread_join(threads[i], NULL);

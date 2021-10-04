@@ -5,6 +5,7 @@
 
 #define NUM_OF_THREADS 2
 
+// function run when threads are created
 void* runningPrimeThread(void *vargp) {
     prime(atoi((char*) vargp), NULL, 0);
     return 0;
@@ -13,6 +14,9 @@ void* runningPrimeThread(void *vargp) {
 int main(int argc, char *argv[]) {
     pthread_t threads[NUM_OF_THREADS];
 
+    // depending on the number sent (0 or anything else)
+    // the prime values with be sequentially determined
+    // or threads will be created to do these calculations
     if (atoi(argv[1]) == 0) {
         for (int i = 0; i < 2; i++)
         {
