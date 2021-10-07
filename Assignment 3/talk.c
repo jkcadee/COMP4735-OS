@@ -6,6 +6,11 @@ void talk(int numberOfLines, char* talker) {
     for (int i = 0; i < numberOfLines; i++)
     {
         printf("%s: %d\n", talker, i);
+        for (int i = 0; i < numberOfLines * numberOfLines; i++);
+        for (int i = 0; i < numberOfLines * numberOfLines; i++);
+        for (int i = 0; i < numberOfLines * numberOfLines; i++);
+        for (int i = 0; i < numberOfLines * numberOfLines; i++);
+        for (int i = 0; i < numberOfLines * numberOfLines; i++);
     }
 }
 
