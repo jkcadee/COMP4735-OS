@@ -76,7 +76,7 @@ void * producerFunc(void *arg) {
             break;
 
         case SYNC_COND:
-            // ???
+            // ????
             break;
         }
         usleep(1);
