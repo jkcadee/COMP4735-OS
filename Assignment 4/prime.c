@@ -22,11 +22,6 @@ prime(int numPrimesToFind, int *primeListSupplied)
     }
     if (p == primesCnt) {
       primeList[primesCnt++] = n;
-        if (primesCnt == numPrimesToFind) {
-          printf("%d\n", n);
-        } else {
-          printf("%d ", n);
-        } 
     }
     ++n;
   }

@@ -5,3 +5,5 @@ thread_race
 threads
 primeMain
 *.txt
+skel
+*.o
