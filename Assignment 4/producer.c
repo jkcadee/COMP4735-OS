@@ -44,19 +44,18 @@ void * producerFunc(void *arg) {
                 break;
             case SYNC_SLEEP:
                 if (qCount == Q_SIZE) {
-                    for (int i = 0; i < 10000; i++) {
-                        printf("producer sleep \n");
-                        producerSleeping = true;
-                        sem_wait(&producerWakeSema);
-                        producerSleeping = false;
-                    }
+                    for (int i = 0; i < 10000; i++) 
+                    printf("producer sleep \n");
+                    producerSleeping = true;
+                    sem_wait(&producerWakeSema);
+                    producerSleeping = false;
+                    
                 }
                 pthread_mutex_lock(&mutex);
                 break;
             case SYNC_SEMA:
                 sem_post(&mutexSema);
                 sem_post(&hasItemsSema);
-
                 break;
             case SYNC_COND:
                 // ???
