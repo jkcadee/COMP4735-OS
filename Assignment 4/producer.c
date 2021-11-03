@@ -37,51 +37,98 @@ void * producerFunc(void *arg) {
     int n = 0;
     while (n < numToProduce) {
         switch (syncMethod) {
+            case SYNC_SPIN:
+                while(qCount == Q_SIZE) {
+                    usleep(1);
+                }
+                break;
+            case SYNC_SLEEP:
+                if (qCount == Q_SIZE) {
+                    for (int i = 0; i < 10000; i++) {
+                        printf("producer sleep \n");
+                        producerSleeping = true;
+                        sem_wait(&producerWakeSema);
+                        producerSleeping = false;
+                    }
+                }
+                pthread_mutex_lock(&mutex);
+                break;
+            case SYNC_SEMA:
+                sem_post(&mutexSema);
+                sem_post(&hasItemsSema);
+
+                break;
+            case SYNC_COND:
+                // ???
+                break;
+        }
+        // produce
+        itemList[qTail++] = n;
+        if (qTail == Q_SIZE) {
+            qTail = 0;
+        }
+
+        ++qCount;
+        
+        printf("p %2d %d\n", qCount, n);
+        ++n;
+        usleep(1);
+    }
+    return 0;
+}
+
+void * consumerFunc(void *arg) {
+    int n = 0;
+    int prv_n = -1;
+    while (true) {
+        switch (syncMethod) {
         case SYNC_SPIN:
-            while(qCount == Q_SIZE) {
+            while (qCount == 0) {
                 usleep(1);
             }
             break;
         case SYNC_SLEEP:
-            if (qCount == Q_SIZE) {
-                for (int i = 0; i < 10000; i++)
-                printf("producer sleep \n");
-                producerSleeping = true;
-                sem_wait(&producerWakeSema);
-                producerSleeping = false;
-            }
             break;
         case SYNC_SEMA:
-            
             break;
         case SYNC_COND:
-            // ???
             break;
-    }
-        if (qTail == Q_SIZE) {
-            qTail = 0;
         }
-        ++qCount;
-        printf("p %2d %d\n", qCount, n);
-        ++n;
+
+        n = itemList[qHead++];
+
+        if ((n - prv_n) != 1) {
+            printf("Consumer error at %d-%d\n", prv_n, n);
+            exit(2);
+        }
+
+        prv_n = n;
+
+        if (qHead == Q_SIZE) {
+            qHead = 0;
+        }
+
+        --qCount;
+        printf("c %2d %d \n", qCount, n);
 
         switch (syncMethod) {
         case SYNC_SPIN:
             break;
-        
         case SYNC_SLEEP:
             break;
-
         case SYNC_SEMA:
             break;
-
         case SYNC_COND:
-            // ????
             break;
         }
         usleep(1);
+
+        if (n == (numToProduce - 1)) {
+            return 0;
+        }
     }
-    return 0;
+
+    return 0;   
 }
 
 static void usage() {
@@ -103,6 +150,14 @@ int main(int argc, char **argv) {
     //initialize buffer to empty
     qHead = qTail = 0;
     qCount = 0;
+
+    // start threads
+    pthread_create(&producer, NULL, producerFunc, 0);
+    pthread_create(&consumer, NULL, consumerFunc, 0);
+
+    // wait for threads to end
+    pthread_join(producer, 0);
+    pthread_join(consumer, 0);
 
     return 0;
 }  
