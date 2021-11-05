@@ -4,6 +4,7 @@ talk
 thread_race
 threads
 primeMain
+producer
 *.txt
 skel
 *.o
