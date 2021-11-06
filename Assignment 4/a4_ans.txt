@@ -1,0 +1,107 @@
+prime:
+
+purpose: The prime program finds all primes to the n_th number. It returns the n_th prime.
+options: -list
+output:
+
+$ ./prime 10
+29
+
+$ ./prime -list 10
+2 3 5 7 11 13 17 19 23 29 
+29
+
+producer:
+
+purpose: The producer program simulates a producer and consumer. 
+It will producer and consume as many numbers as specified.
+options: 0=spin|1=sleep|2=sema|3=cond numberToProduce
+output:
+
+$ ./producer 0 10
+p  1 0
+c  0 0 
+p  1 1
+c  0 1 
+p  1 2
+c  0 2 
+p  1 3
+c  0 3 
+p  1 4
+p  2 5
+c  1 4 
+c  0 5 
+p  1 6
+c  0 6 
+p  1 7
+p  2 8
+c  1 7 
+p  2 9
+c  1 8 
+c  0 9 
+
+$ ./producer 1 10 (Might hang on larger values)
+p  1 0
+c  0 0 
+p  1 1
+p  2 2
+p  3 3
+p  4 4
+p  5 5
+p  6 6
+p  7 7
+p  8 8
+p  9 9
+c  8 1 
+c  7 2 
+c  6 3 
+c  5 4 
+c  4 5 
+c  3 6 
+c  2 7 
+c  1 8 
+c  0 9
+
+$ ./producer 2 10 (Sema)
+p  1 0
+c  0 0 
+p  1 1
+c  0 1 
+p  1 2
+c  0 2 
+p  1 3
+c  0 3 
+p  1 4
+c  0 4 
+p  1 5
+c  0 5 
+p  1 6
+c  0 6 
+p  1 7
+c  0 7 
+p  1 8
+c  0 8 
+p  1 9
+c  0 9
+
+$ ./producer 3 10 (Cond)
+p  1 0
+c  0 0 
+p  1 1
+p  2 2
+p  3 3
+p  4 4
+p  5 5
+c  4 1 
+c  3 2 
+p  4 6
+p  5 7
+c  4 3 
+p  5 8
+c  4 4 
+p  5 9
+c  4 5 
+c  3 6 
+c  2 7 
+c  1 8 
+c  0 9 
