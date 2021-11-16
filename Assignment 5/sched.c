@@ -49,55 +49,11 @@ static SchedInfo schedInfo;
 static void schedInit();
 static bool readJobsFile(char *fn);
 
-int main(int argc, char** argv) {
-    int i;
-    char *jobsFn;
-
-    // default
-    jobsFn = "schedJobs.txt";
-
-    for (i = 1; i < argc; ++i) {
-        if (argv[i][0] != '-') {
-            break;
-        }
-
-        if (!strcmp(argv[i], "-jobs")) {
-            if (++i == argc) {
-                usage();
-            }
-            jobsFn = argv[i];
-        } else {
-            usage();
-        }
-    }
-
-    if (i != argc) {
-        usage();
-    }
-
-    if (!readJobsFile(jobsFn)) {
-        exit(1);
-    }
-
-    schedInit();
-    schedRun();
-}
-
-void schedInit() {
-    RdyQueue *queue;
-    for (int i = 0; i < NUM_PRIOR; i++) {
-        queue = &schedInfo.rdyQueueList[i];
-        queue->count = 0;
-        queue->head = 0;
-        queue->timeSliceAllot = i + 1;
-        queue->timeSliceRemain = queue->timeSliceAllot;
-    }
-    makeJobsReady();
+static void usage() {
+    printf("usage: ");
 }
 
 static void makeJobsReady() {
-    int timeRemain;
-    int pid;
     ProcessTableEntry *entry;
     RdyQueue *queue;
     RdyEntry *readyEntry;
@@ -113,6 +69,18 @@ static void makeJobsReady() {
 
         printf("Prior: %d, PID: %d, JobLen: %d\n", entry->prior, entry->pid, entry->jobLen);   
     }
+}
+
+void schedInit() {
+    RdyQueue *queue;
+    for (int i = 0; i < NUM_PRIOR; i++) {
+        queue = &schedInfo.rdyQueueList[i];
+        queue->count = 0;
+        queue->head = 0;
+        queue->timeSliceAllot = i + 1;
+        queue->timeSliceRemain = queue->timeSliceAllot;
+    }
+    makeJobsReady();
 }
 
 static ProcessTableEntry * processFind(int pid) {
@@ -155,10 +123,6 @@ void schedRun() {
     }
 }
 
-static void usage() {
-    printf("usage: ");
-}
-
 static bool readJobsFile(char* fn) {
     FILE *filepath;
     char *lp;
@@ -190,4 +154,38 @@ static bool readJobsFile(char* fn) {
 
     fclose(filepath);
     return true;
+}
+
+int main(int argc, char** argv) {
+    int i;
+    char *jobsFn;
+
+    // default
+    jobsFn = "schedJobs.txt";
+
+    for (i = 1; i < argc; ++i) {
+        if (argv[i][0] != '-') {
+            break;
+        }
+
+        if (!strcmp(argv[i], "-jobs")) {
+            if (++i == argc) {
+                usage();
+            }
+            jobsFn = argv[i];
+        } else {
+            usage();
+        }
+    }
+
+    if (i != argc) {
+        usage();
+    }
+
+    if (!readJobsFile(jobsFn)) {
+        exit(1);
+    }
+
+    schedInit();
+    schedRun();
 }
