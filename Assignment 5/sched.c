@@ -46,11 +46,17 @@ typedef struct {
 static ProcessTable processTable;
 static SchedInfo schedInfo;
 
+static bool enableFairness = false;
+static bool enableThread = false;
+static bool sysActive;
+static int sleepAmount = 10;
+
 static void schedInit();
 static bool readJobsFile(char *fn);
 
 static void usage() {
-    printf("usage: ");
+    printf("usage: sched [-jobs filename]");
+    exit(1);
 }
 
 static void makeJobsReady() {
@@ -92,34 +98,58 @@ static ProcessTableEntry * processFind(int pid) {
     return NULL;
 }
 
-void schedRun() {
+static void schedRun() {
     RdyQueue *queue;
     RdyEntry *readyEntry;
     ProcessTableEntry *processEntry;
 
-    while (schedInfo.readyCount >= 0) {
+    while (sysActive) {
         int prior;
         for (prior = NUM_PRIOR - 1; prior >= 0; prior--) {
             queue = &schedInfo.rdyQueueList[prior];
             if (queue->count > 0) {
                 break;
             } 
-
+            if (queue->timeSliceRemain > 0) {
+                break;
+            } 
         }
-    
+
         if (prior < 0) {
-            break;
-        }
+            if (enableFairness) {
+                for (prior = NUM_PRIOR-1; prior >= 0; prior--) {
+                    queue = &schedInfo.rdyQueueList[prior];
+                    queue->timeSliceRemain = queue->timeSliceAllot;
+                }
+            }
+            queue = NULL;
+        } 
 
-        readyEntry = &queue->entries[queue->head];
-        processEntry = processFind(readyEntry->pid);
-        if (--processEntry->timeRemain == 0) {
-            printf("%s is done\n", processEntry->name);
-            // qhead
-            queue->head++;
-            queue->count--;
+        if (queue) {
+            if (enableFairness) {
+                queue->timeSliceRemain--;
+            }
+            for (prior = NUM_PRIOR-1; prior >= 0; prior--) {   
+                readyEntry = &queue->entries[queue->head];
+                processEntry = processFind(readyEntry->pid);
+                if (--processEntry->timeRemain == 0) {
+                    printf("%s is done\n", processEntry->name);
+                    queue->count--;
+                    for (int h = queue->head; h < queue->count; h++) {
+                        queue->entries[h] = queue->entries[h++];
+                    }
+                    schedInfo.readyCount--;
+                } else {
+                    if (processEntry->timeRemain >= 0) {
+                        printf("%s %d\n", processEntry->name, processEntry->timeRemain);
+                    }
+                }
+                if (queue->head++ >= queue->count) {
+                    queue->head = 0;
+                }
+                usleep(sleepAmount*1000);
+            }
         }
-        // qhead
     }
 }
 
@@ -133,7 +163,7 @@ static bool readJobsFile(char* fn) {
     char jobName[MAX_PROCESS_NAME_LEN];
 
     if (!(filepath = fopen(fn, "r"))) {
-        printf("Canno open '%s' for reading \n", fn);
+        printf("Cannot open '%s' for reading \n", fn);
         return false;
     }
     
@@ -156,6 +186,12 @@ static bool readJobsFile(char* fn) {
     return true;
 }
 
+void * schedThread(void*arg) {
+    schedRun();
+    printf("Scheduler exited\n");
+    return 0;
+}
+
 int main(int argc, char** argv) {
     int i;
     char *jobsFn;
@@ -173,6 +209,10 @@ int main(int argc, char** argv) {
                 usage();
             }
             jobsFn = argv[i];
+        } else if (!strcmp(argv[i], "-fair")) {
+            enableFairness = true;
+        } else if (!strcmp(argv[i], "-thread")) {
+            enableThread = true;
         } else {
             usage();
         }
@@ -185,7 +225,27 @@ int main(int argc, char** argv) {
     if (!readJobsFile(jobsFn)) {
         exit(1);
     }
-
     schedInit();
-    schedRun();
+
+    sysActive = true;
+    if (enableThread) {
+        pthread_t tid;
+        char cmd[256];
+        pthread_create(&tid, NULL, schedThread, 0);
+
+        while (sysActive) {
+            fprintf(stderr, ">");
+            fgets(cmd, 256, stdin);
+            if (cmd[0] == 'q') {
+                sysActive = false;
+            } else if (cmd[0] == 'r') {
+                makeJobsReady();
+            } else if (cmd[0] == 's') {
+                sscanf(&cmd[1], "%d", &sleepAmount);
+            }
+        }
+        pthread_join(tid, NULL);
+    } else {
+        schedRun();
+    }
 }
