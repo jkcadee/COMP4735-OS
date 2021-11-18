@@ -1,0 +1,572 @@
+SCHED:
+sched.c is a scheduler. It takes a text file that outlines the processes that must run and the priority/job length for each process. 
+It then runs the scheduled based on the length and priority.
+It will change the results based on what optional arguments are given 
+
+sched [filename]
+This command runs the scheduler program and reads the given file name.
+
+Example program calls and results:
+sched filename_that_doesnt_exist.txt
+Usage: sched [-jobs filename]
+
+sched schedJobs.txt (text file is not in the correct directory)
+Cannot open 'schedJobs.txt' for reading
+
+sched or sched schedJobs.txt
+...
+c0 6
+d0 15
+c0 5
+d0 14
+c0 4
+d0 13
+c0 3
+d0 12
+c0 2
+d0 11
+c0 1
+d0 10
+c0 is done
+d0 9
+d0 8
+d0 7
+d0 6
+d0 5
+d0 4
+d0 3
+d0 2
+d0 1
+d0 is done
+
+sched -fair
+...
+b1 2
+b1 1
+d0 14
+b1 is done
+c0 4
+d0 13
+c0 3
+d0 12
+c0 2
+d0 11
+c0 1
+d0 10
+c0 is done
+d0 9
+d0 8
+d0 7
+d0 6
+d0 5
+d0 4
+d0 3
+d0 2
+d0 1
+d0 is done
+
+sched -fair > 
+bash: syntax error near unexpected token `newline'
+
+sched -fair /dev/pts/0
+Usage: sched [-jobs filename]
+
+sched -thread
+> a3 18
+a3 17
+a3 16
+a3 15
+a3 14
+a3 13
+a3 12
+a3 11
+a3 10
+a3 9
+a3 8
+a3 7
+a3 6
+a3 5
+a3 4
+a3 3
+a3 2
+a3 1
+a3 is done
+a2 4
+b2 1
+c2 7
+a2 3
+b2 is done
+a2 2
+c2 6
+a2 1
+c2 5
+a2 is done
+c2 4
+c2 3
+c2 2
+c2 1
+c2 is done
+a1 2
+b1 20
+c1 11
+d1 8
+a1 1
+b1 19
+c1 10
+d1 7
+a1 is done
+c1 9
+d1 6
+b1 18
+c1 8
+d1 5
+b1 17
+c1 7
+d1 4
+b1 16
+c1 6
+d1 3
+b1 15
+c1 5
+d1 2
+b1 14
+c1 4
+d1 1
+b1 13
+c1 3
+d1 is done
+b1 12
+c1 2
+b1 11
+c1 1
+b1 10
+c1 is done
+b1 9
+b1 8
+b1 7
+b1 6
+b1 5
+b1 4
+b1 3
+b1 2
+b1 1
+b1 is done
+a0 5
+b0 1
+c0 10
+d0 21
+a0 4
+b0 is done
+d0 20
+a0 3
+c0 9
+d0 19
+a0 2
+c0 8
+d0 18
+a0 1
+c0 7
+d0 17
+a0 is done
+d0 16
+c0 6
+d0 15
+c0 5
+d0 14
+c0 4
+d0 13
+c0 3
+d0 12
+c0 2
+d0 11
+c0 1
+d0 10
+c0 is done
+d0 9
+d0 8
+d0 7
+d0 6
+d0 5
+d0 4
+d0 3
+d0 2
+d0 1
+d0 is done
+
+sched -thread >
+bash: syntax error near unexpected token `newline'
+
+sched -thread /dev/pts/0
+Usage: sched [-jobs filename]
+
+tty: the terminal was connected to /dev/pts/0 as its standard output
+
+sched -fair > /dev/pts/0
+This command runs the scheduler to be fair with the processes that are run
+a3 18
+a3 17
+a3 16
+a3 15
+a2 4
+b2 1
+c2 7
+a1 2
+b1 20
+a0 5
+a3 14
+a3 13
+a3 12
+a3 11
+a2 3
+b2 is done
+a2 2
+c1 11
+d1 8
+b0 1
+a3 10
+a3 9
+a3 8
+a3 7
+c2 6
+a2 1
+c2 5
+a1 1
+b1 19
+c0 10
+a3 6
+a3 5
+a3 4
+a3 3
+a2 is done
+c2 4
+c2 3
+c1 10
+d1 7
+d0 21
+a3 2
+a3 1
+a3 is done
+c2 2
+c2 1
+c2 is done
+a1 is done
+c1 9
+a0 4
+d1 6
+b1 18
+b0 is done
+c1 8
+d1 5
+d0 20
+b1 17
+c1 7
+a0 3
+d1 4
+b1 16
+c0 9
+c1 6
+d1 3
+d0 19
+b1 15
+c1 5
+a0 2
+d1 2
+b1 14
+c0 8
+c1 4
+d1 1
+d0 18
+b1 13
+c1 3
+a0 1
+d1 is done
+b1 12
+c0 7
+c1 2
+b1 11
+d0 17
+c1 1
+b1 10
+a0 is done
+c1 is done
+b1 9
+d0 16
+b1 8
+b1 7
+c0 6
+b1 6
+b1 5
+d0 15
+b1 4
+b1 3
+c0 5
+b1 2
+b1 1
+d0 14
+b1 is done
+c0 4
+d0 13
+c0 3
+d0 12
+c0 2
+d0 11
+c0 1
+d0 10
+c0 is done
+d0 9
+d0 8
+d0 7
+d0 6
+d0 5
+d0 4
+d0 3
+d0 2
+d0 1
+d0 is done
+
+sched -thread > /dev/pts/0
+This command runs the scheduler to use threads to finish all processes
+
+> a3 18
+a3 17
+a3 16
+a3 15
+a3 14
+a3 13
+a3 12
+a3 11
+a3 10
+a3 9
+a3 8
+a3 7
+a3 6
+a3 5
+a3 4
+a3 3
+a3 2
+a3 1
+a3 is done
+a2 4
+b2 1
+c2 7
+a2 3
+b2 is done
+a2 2
+c2 6
+a2 1
+c2 5
+a2 is done
+c2 4
+c2 3
+c2 2
+c2 1
+c2 is done
+a1 2
+b1 20
+c1 11
+d1 8
+a1 1
+b1 19
+c1 10
+d1 7
+a1 is done
+c1 9
+d1 6
+b1 18
+c1 8
+d1 5
+b1 17
+c1 7
+d1 4
+b1 16
+c1 6
+d1 3
+b1 15
+c1 5
+d1 2
+b1 14
+c1 4
+d1 1
+b1 13
+c1 3
+d1 is done
+b1 12
+c1 2
+b1 11
+c1 1
+b1 10
+c1 is done
+b1 9
+b1 8
+b1 7
+b1 6
+b1 5
+b1 4
+b1 3
+b1 2
+b1 1
+b1 is done
+a0 5
+b0 1
+c0 10
+d0 21
+a0 4
+b0 is done
+d0 20
+a0 3
+c0 9
+d0 19
+a0 2
+c0 8
+d0 18
+a0 1
+c0 7
+d0 17
+a0 is done
+d0 16
+c0 6
+d0 15
+c0 5
+d0 14
+c0 4
+d0 13
+c0 3
+d0 12
+c0 2
+d0 11
+c0 1
+d0 10
+c0 is done
+d0 9
+d0 8
+d0 7
+d0 6
+d0 5
+d0 4
+d0 3
+d0 2
+d0 1
+d0 is done
+
+sched -fair -thread > /dev/pts/0
+This command runs the scheduler to use threads and be fair with the priority of processes
+> a3 18
+a3 17
+a3 16
+a3 15
+a2 4
+b2 1
+c2 7
+a1 2
+b1 20
+a0 5
+a3 14
+a3 13
+a3 12
+a3 11
+a2 3
+b2 is done
+a2 2
+c1 11
+d1 8
+b0 1
+a3 10
+a3 9
+a3 8
+a3 7
+c2 6
+a2 1
+c2 5
+a1 1
+b1 19
+c0 10
+a3 6
+a3 5
+a3 4
+a3 3
+a2 is done
+c2 4
+c2 3
+c1 10
+d1 7
+d0 21
+a3 2
+a3 1
+a3 is done
+c2 2
+c2 1
+c2 is done
+a1 is done
+c1 9
+a0 4
+d1 6
+b1 18
+b0 is done
+c1 8
+d1 5
+d0 20
+b1 17
+c1 7
+a0 3
+d1 4
+b1 16
+c0 9
+c1 6
+d1 3
+d0 19
+b1 15
+c1 5
+a0 2
+d1 2
+b1 14
+c0 8
+c1 4
+d1 1
+d0 18
+b1 13
+c1 3
+a0 1
+d1 is done
+b1 12
+c0 7
+c1 2
+b1 11
+d0 17
+c1 1
+b1 10
+a0 is done
+c1 is done
+b1 9
+d0 16
+b1 8
+b1 7
+c0 6
+b1 6
+b1 5
+d0 15
+b1 4
+b1 3
+c0 5
+b1 2
+b1 1
+d0 14
+b1 is done
+c0 4
+d0 13
+c0 3
+d0 12
+c0 2
+d0 11
+c0 1
+d0 10
+c0 is done
+d0 9
+d0 8
+d0 7
+d0 6
+d0 5
+d0 4
+d0 3
+d0 2
+d0 1
+d0 is done
