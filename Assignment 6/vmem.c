@@ -14,13 +14,16 @@ typedef struct {
 } PageTableEntry;
 
 typedef struct {
+    int arrayOfPageMap[SIZE_OF_ADDRESS];
+    int count;
     PageTableEntry entries[SIZE_OF_PAGE_TABLE];
 } PageTable;
 
 static PageTable table;
 
-int convertToBinary(char *numToConvert) {
+void convertToBinary(char *numToConvert) {
     PageTableEntry *entry;
+    entry = &table.entries[table.count++];
     int index;
     int addressIndex = 0;
     char address[SIZE_OF_ADDRESS];
@@ -132,6 +135,68 @@ int convertToBinary(char *numToConvert) {
     }
 }
 
+void addMapping(char *mappedVal) {
+    table.arrayOfPageMap[mappedVal[0]] = mappedVal[strlen(mappedVal) - 1];
+}
+
+bool readPageMapFile(char *fn) {
+    FILE *fp;
+
+    if (!(fp = fopen(fn, "r"))) { // if there is an error with opening the file
+        // print an error message and return false
+        printf("Cannot open '%s' for reading\n", fn);
+        return false; 
+    }
+    
+    #define MAX_LINE_LEN 80 // max line length for file
+    char line[MAX_LINE_LEN];
+
+    while ((fscanf(fp, "%s", line)) != EOF) {
+        addMapping(line);
+    }
+    
+
+    // close the file and return true
+    fclose(fp);
+    return true;
+}
+
+bool readMemRefFile(char *fn) {
+    FILE *fp;
+
+    if (!(fp = fopen(fn, "r"))) { // if there is an error with opening the file
+        // print an error message and return false
+        printf("Cannot open '%s' for reading\n", fn);
+        return false; 
+    }
+    
+    #define MAX_LINE_LEN 80 // max line length for file
+    char line[MAX_LINE_LEN];
+ // entry in the page table
+
+    while ((fscanf(fp, "%s", line)) != EOF) {
+        convertToBinary(line);
+    }
+    
+
+
+    // close the file and return true
+    fclose(fp);
+    return true;
+}
+
 int main(int argc, char **argv) {
+    FILE *fp;
+    table.count = 0;
+    
+    for (int i = 0; i < argc; i++) {
+        if (i == 2) {
+            readMemRefFile(argv[i]);
+        } else if (i == 3) {
+            readPageMapFile(argv[i]);
+        }
+    }
+    
+
 
 }
