@@ -9,3 +9,6 @@ producer
 skel
 *.o
 a4_ans.txt
+vmem.exe
+vmemClone.exe
+vmemClone.c

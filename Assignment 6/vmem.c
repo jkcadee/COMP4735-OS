@@ -58,7 +58,6 @@ pageSetup(char *pageMapFn)
 {
     FILE *fp; // file pointers 
     int virPage, pageFrame; // virtual page and page frame
-    int index = 0;
     PageTableEntry* entry; 
 
     if (!(fp = fopen(pageMapFn, "r"))) {
@@ -73,12 +72,11 @@ pageSetup(char *pageMapFn)
     
     while (fscanf(fp, "%d-%d", &virPage, &pageFrame) == 2) { 
         // fill page table entry
-        entry = &pageTable[index];
+        entry = &pageTable[virPage];
 
         // entry is filled 
         entry->virPage = virPage;
         entry->pageFrame = pageFrame;
-        index++;
     }
     // close the file
     fclose(fp);
