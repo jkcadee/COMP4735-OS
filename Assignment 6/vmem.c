@@ -1,214 +1,203 @@
+/*
+ * Virtual memory MMU
+ * Illustrates operation of a MMU translating virtual addresses
+ *
+ * Memory reference file format:
+ * Address in hex per line
+ *
+ * e.g.
+ * 12
+ * a5
+ * e5
+ * 67
+ *
+ * Page frame assignment file format:
+ * Virtual page-Page frame
+ *
+ * e.g.
+ * 0-3
+ * 1-2
+ * 3-0
+ * 7-1
+ */
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
+#include <unistd.h>
 #include <string.h>
 
-#define SIZE_OF_PAGE_TABLE 100
-#define SIZE_OF_ADDRESS 8
+#define PAGE_TABLE_SZ 8
 
+// page table entry struct
 typedef struct {
-    unsigned char num;
-    int mappedVal;
-    char* address;
+    int virPage; // virtual page num
+    int pageFrame; // page frame
 } PageTableEntry;
 
-typedef struct {
-    int arrayOfPageMap[SIZE_OF_ADDRESS];
-    int count;
-    PageTableEntry entries[SIZE_OF_PAGE_TABLE];
-} PageTable;
+static PageTableEntry pageTable[PAGE_TABLE_SZ];
 
-static PageTable table;
+// printing an integer as a binary number
+static void
+printIntAsBin(int val)
+{
+    // each one of these calculations determine if x % 2 = 0
+    // if x % 2 = 0 then print 1, if not then print 0
+    printf("%c%c%c%c%c%c%c%c", 
+	val&0x80 ? '1':'0',
+	val&0x40 ? '1':'0',
+	val&0x20 ? '1':'0',
+	val&0x10 ? '1':'0',
+	val&0x8 ? '1':'0',
+	val&0x4 ? '1':'0',
+	val&0x2 ? '1':'0',
+	val&0x1 ? '1':'0');
+}
 
-void convertToBinary(char *numToConvert, PageTableEntry *entry) {
+static bool
+pageSetup(char *pageMapFn)
+{
+    FILE *fp; // file pointers 
+    int virPage, pageFrame; // virtual page and page frame
     int index = 0;
-    int addressIndex = 0;
-    char address[SIZE_OF_ADDRESS];
-    while(numToConvert[index]) {
-        switch (numToConvert[index]) {
-            case '0':
-                address[addressIndex] = '0';
-                address[addressIndex + 1] = '0';
-                address[addressIndex + 2] = '0';
-                address[addressIndex + 3] = '0';
-                break;
-            case '1':
-                address[addressIndex] = '0';
-                address[addressIndex + 1] = '0';
-                address[addressIndex + 2] = '0';
-                address[addressIndex + 3] = '1';
-                break;
-            case '2':
-                address[addressIndex] = '0';
-                address[addressIndex + 1] = '0';
-                address[addressIndex + 2] = '1';
-                address[addressIndex + 3] = '0';
-                break;
-            case '3':
-                address[addressIndex] = '0';
-                address[addressIndex + 1] = '0';
-                address[addressIndex + 2] = '1';
-                address[addressIndex + 3] = '1';
-                break;
-            case '4':
-                address[addressIndex] = '0';
-                address[addressIndex + 1] = '1';
-                address[addressIndex + 2] = '0';
-                address[addressIndex + 3] = '0';
-                break;
-            case '5':
-                address[addressIndex] = '0';
-                address[addressIndex + 1] = '1';
-                address[addressIndex + 2] = '0';
-                address[addressIndex + 3] = '1';
-                break;
-            case '6':
-                address[addressIndex] = '0';
-                address[addressIndex + 1] = '1';
-                address[addressIndex + 2] = '1';
-                address[addressIndex + 3] = '0';
-                break;
-            case '7':
-                address[addressIndex] = '0';
-                address[addressIndex + 1] = '1';
-                address[addressIndex + 2] = '1';
-                address[addressIndex + 3] = '1';
-                break;
-            case '8':
-                address[addressIndex] = '1';
-                address[addressIndex + 1] = '0';
-                address[addressIndex + 2] = '0';
-                address[addressIndex + 3] = '0';
-                break;
-            case '9':
-                address[addressIndex] = '1';
-                address[addressIndex + 1] = '0';
-                address[addressIndex + 2] = '0';
-                address[addressIndex + 3] = '1';
-                break;
-            case 'A':
-            case 'a':
-                address[addressIndex] = '1';
-                address[addressIndex + 1] = '0';
-                address[addressIndex + 2] = '1';
-                address[addressIndex + 3] = '0';
-                break;
-            case 'B':
-            case 'b':
-                address[addressIndex] = '1';
-                address[addressIndex + 1] = '0';
-                address[addressIndex + 2] = '1';
-                address[addressIndex + 3] = '1';
-                break;
-            case 'C':
-            case 'c':
-                address[addressIndex] = '1';
-                address[addressIndex + 1] = '1';
-                address[addressIndex + 2] = '0';
-                address[addressIndex + 3] = '0';
-                break;
-            case 'D':
-            case 'd':
-                address[addressIndex] = '1';
-                address[addressIndex + 1] = '1';
-                address[addressIndex + 2] = '0';
-                address[addressIndex + 3] = '1';
-                break;
-            case 'E':
-            case 'e':
-                address[addressIndex] = '1';
-                address[addressIndex + 1] = '1';
-                address[addressIndex + 2] = '1';
-                address[addressIndex + 3] = '0';
-                break;
-            case 'F':
-            case 'f':
-                address[addressIndex] = '1';
-                address[addressIndex + 1] = '1';
-                address[addressIndex + 2] = '1';
-                address[addressIndex + 3] = '1';
-                break;
-        }
+    PageTableEntry* entry; 
+
+    if (!(fp = fopen(pageMapFn, "r"))) {
+        printf("Cannot open '%s' for reading\n", pageMapFn);
+        return false;
+    }
+    // initialize page table
+    for (int i = 0; i < PAGE_TABLE_SZ; i++) {
+        pageTable[i].virPage = -1;
+        pageTable[i].pageFrame = -1;
+    }
+    
+    while (fscanf(fp, "%d-%d", &virPage, &pageFrame) == 2) { 
+        // fill page table entry
+        entry = &pageTable[index];
+
+        // entry is filled 
+        entry->virPage = virPage;
+        entry->pageFrame = pageFrame;
         index++;
-        addressIndex = addressIndex + 4;
     }
-    entry->address = address;
-    printf("address: %s\n", table.entries[0].address);
-}
-
-void addMapping(char *mappedVal) {
-    table.arrayOfPageMap[(int) mappedVal[0]] = mappedVal[strlen(mappedVal) - 1];
-}
-
-bool readPageMapFile(char *fn) {
-    FILE *fp;
-
-    if (!(fp = fopen(fn, "r"))) { // if there is an error with opening the file
-        // print an error message and return false
-        printf("Cannot open '%s' for reading\n", fn);
-        return false; 
-    }
-    
-    #define MAX_LINE_LEN 80 // max line length for file
-    char line[MAX_LINE_LEN];
-
-    while ((fscanf(fp, "%s", line)) != EOF) {
-        addMapping(line);
-    }
-    
-
-    // close the file and return true
+    // close the file
     fclose(fp);
-    return true;
-}
 
-bool readMemRefFile(char *fn) {
-    FILE *fp;
-    if (!(fp = fopen(fn, "r"))) { // if there is an error with opening the file
-        // print an error message and return false
-        printf("Cannot open '%s' for reading\n", fn);
-        return false; 
-    }
-    
-    #define MAX_LINE_LEN 80 // max line length for file
-    char line[MAX_LINE_LEN];
+    printf("Page table:\n");
+    for (int i=0; i<PAGE_TABLE_SZ; ++i) {
+        // print virtual page to page frame mapping
+        // print '-' if page is not in memory
 
-    while ((fscanf(fp, "%s", line)) != EOF) {
-        PageTableEntry* entry = &table.entries[table.count++];
-        convertToBinary(line, entry);
-        //printf("entry: address %s\n", table.entries[table.count].address);
-        // for (int i = 0; i < table.count; i++) {
-        //     printf("entry: address %s\n", table.entries[i].address);
-        // }
-    }
-
-    // for (int i = 0; i < table.count; i++) {
-    //     printf("entry: address %s\n", table.entries[i].address);
-    // }
-
-    // close the file and return true
-    fclose(fp);
-    return true;
-}
-
-int main(int argc, char **argv) {
-    table.count = 0;
-
-    for (int i = 0; i < argc; i++) {
-        if (i == 1) {
-            readMemRefFile(argv[i]);
-        } else if (i == 2) {
-            readPageMapFile(argv[i]);
+        // if the vir page has been filled
+        if (pageTable[i].virPage != -1) {
+            // print out with the virtual page and page frame
+            printf("%d: %d\n", pageTable[i].virPage, pageTable[i].pageFrame);
+        } else {
+            // else print without the page frame
+            printf("%d: -\n", i);
         }
     }
-    
-    // for (int i = 0; i < table.count; i++) {
-    //     printf("entry: address %s\n", table.entries[i].address);
-    // }
-    
-    for (int i = 0; i < table.count; i++) {
-        
-    }
-    
+    printf("\n");
 
+    return true;
+}
+
+// run the file which outlines memRef
+static bool
+run(char *memRefFn)
+{
+    FILE *fp; // file pointer
+    unsigned char virAddr; // new virtual address
+    int offset, pageNumBits; // offset and page number bits
+    int pageFrame = -1; // denotes if the page frame exists
+
+    // if you cannot open the file, return false
+    if (!(fp = fopen(memRefFn, "r"))) {
+        printf("Cannot open '%s' for reading\n", memRefFn);
+        return false;
+    }
+
+    printf("Run:\n");
+    while (fscanf(fp, "%hhx", &virAddr) == 1) {  // if a hex number is found
+        // compute page frame and physical addr by bitshifting 
+        pageNumBits = (virAddr >> 5) & 0x3f;
+        offset = virAddr & 0x1f;
+
+        // find the corresponding page frame based on the stored page frame in the table and the number of page bits
+        for (int i = 0; i < PAGE_TABLE_SZ; i++) {
+            if(pageTable[i].virPage == pageNumBits) {
+                pageFrame = pageTable[i].pageFrame;
+                break;
+            }
+        }
+
+        // newly created address
+        int newAddr = (pageFrame << 5) | offset;
+
+        // print the values, hex first
+        printf("%02hhx ", virAddr);
+        printf("(");
+        printIntAsBin(virAddr);
+
+        // print virtual address in hex, binary, and virtual page
+        if (pageFrame != -1) {
+            printf(", %d) -> %02hhx (", pageNumBits, newAddr);
+            printIntAsBin(newAddr);
+            printf(", %d)", pageFrame);
+        } else {
+            printf(", %d) -> ", pageNumBits);
+            printf("Page fault"); // if a page frame is not found then print out a page fault
+        }
+
+        printf("\n");
+        pageFrame = -1; // page frame is set to not existing anymore
+        // print physical address in hex, binary, and page frame
+    }
+
+    fclose(fp); // close the file
+    return true;
+}
+
+// usage for the function
+static void
+usage()
+{
+    printf("Usage: vmem [-memRef filename] [-pageMap filename]\n");
+    exit(1);
+}
+
+int
+main(int argc, char **argv)
+{
+    int i;
+    char *memRefFn;
+    char *pageMapFn;
+
+    // default values
+    memRefFn = "memRef.txt";
+    pageMapFn = "pageMap.txt";
+
+    // optional args should start with '-', and precede compulsory args
+    for (i=1; i<argc; ++i) {
+        if (argv[i][0] != '-')
+            break;
+        if (!strcmp(argv[i], "-memRef")) {
+            // add support for -memRef and -pageMap options
+            if (++i == argc) // if there is an issue with the arguments, print the usage
+                usage();
+            memRefFn = argv[i]; // file name becomes the new memRef file name
+        } else if (!strcmp(argv[i], "-pageMap")) {
+            if (++i == argc) // if there is an issue with the arguments, print the usage
+                usage();
+            pageMapFn = argv[i]; // file name becomes the new pageMap file name
+        } else
+            usage();
+    }
+
+    // 0 compulsory args
+    if (i != argc)
+        usage();
+
+    pageSetup(pageMapFn);
+    run(memRefFn);
 }
